@@ -3,3 +3,4 @@ streamlit_lottie
 numpy
 pandas
 seaborn
+plotly
