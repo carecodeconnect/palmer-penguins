@@ -1,25 +1,26 @@
-# load libraries
 import streamlit as st
 from streamlit_lottie import st_lottie
 import seaborn as sns
 import pandas as pd
 import requests
 import altair as alt
+import plotly.express as px
 
-# header
+# Header
 st.title("Palmer Penguins :penguin:")
 
-# subtitle
+# Subtitle/Description
 st.write(
     """
     This is a simple example of a Streamlit app using the Palmer Penguins dataset. 
     The Palmer Penguins dataset is a popular dataset for data exploration and visualization. 
     The dataset contains various measurements of penguins, including bill length, bill depth, flipper length, body mass, and species. 
-    In this example, we will use the Palmer Penguins dataset to create a simple Streamlit app that includes a bar chart, scatter plot, violin plots, and a YouTube video.
+    In this example, we explore the Palmer Penguins dataset through various visualizations.
+    For further details, please refer to the [Palmer Penguins dataset](https://allisonhorst.github.io/palmerpenguins/articles/intro.html).
     """
 )
 
-# animated penguin
+# Animated penguin
 def load_lottieurl(url: str):
     r = requests.get(url)
     if r.status_code != 200:
@@ -27,9 +28,8 @@ def load_lottieurl(url: str):
     return r.json()
 
 lottie_penguin = load_lottieurl(
-    "https://lottie.host/61d21d73-ab4b-43de-a5c0-5e67b0cdbd11/E87nM5RrTf.json"
+    "https://lottie.host/ba70f2c0-0396-4957-9413-60c184cf2bee/tzy7xktBVd.json"
 )
-
 st_lottie(lottie_penguin, height=300, key="penguin_animation")
 
 # Sidebar for data loading
@@ -46,59 +46,45 @@ if uploaded_file is not None:
     # Read the file
     penguins = pd.read_csv(uploaded_file)
 
+# Show YouTube video based on sidebar button
+if st.sidebar.button("Show Video"):
+    st.video("https://youtu.be/q3uXXh1sHcI")
+
 # Proceed only if penguins data is loaded
 if penguins is not None:
-    # Sidebar options
-    st.sidebar.title("Options")
-    option = st.sidebar.selectbox("Choose an option", ["Dataframe", "Visualisation"])
+    # Display the dataset
+    st.header("Penguin Data Table")
+    st.write("This table displays the raw data of penguin measurements.")
+    st.dataframe(penguins)
 
-    if option == "Dataframe":
-        # Display the dataset
-        st.write(penguins)
+    # Bar chart with pandas
+    st.header("Species Distribution")
+    st.write("A bar chart showing the count of each penguin species in the dataset.")
+    st.bar_chart(penguins["species"].value_counts())
 
-        # Download dataset as CSV
-        csv = penguins.to_csv(index=False)
-        st.download_button(label="Download csv", data=csv, file_name="penguins.csv", mime="text/csv")
+    # Scatter Plot with Seaborn
+    st.header("Pairwise Relationships")
+    st.write("Scatter plots showing pairwise relationships between different measurements, colored by species.")
+    st.pyplot(sns.pairplot(penguins, hue="species"))
 
-    elif option == "Visualisation":
-        # title for pandas
-        st.title("Bar chart with pandas")
+    # Scatter Plot with Altair
+    st.header("Flipper Length vs. Bill Depth")
+    st.write("An interactive scatter plot of flipper length against bill depth, colored by species.")
+    chart = alt.Chart(penguins).mark_point().encode(
+        x=alt.X('flipper_length_mm', scale=alt.Scale(domain=(160, 240))),
+        y=alt.Y('bill_depth_mm', scale=alt.Scale(domain=(12, 22))),
+        color='species'
+    )
+    st.altair_chart(chart, use_container_width=True)
 
-        # visualise the dataset
-        st.bar_chart(penguins["species"].value_counts())
+    # Scatter Plot with Plotly
+    st.header("Flipper Length vs. Bill Depth with Plotly")
+    st.write("A scatter plot created with Plotly, showing flipper length against bill depth, colored by species.")
+    fig = px.scatter(penguins, x="flipper_length_mm", y="bill_depth_mm", color="species")
+    st.plotly_chart(fig)
 
-        # title for seaborn
-        st.title("Scatter plot with seaborn")
-        # plot a scatter plot
-        st.pyplot(sns.pairplot(penguins, hue="species"))
-
-        # title for altair
-        st.title("Scatter plot with altair")
-        # plot with altair with x-axis from 160 to 240 and y-axis from 12 to 22
-
-        chart = alt.Chart(penguins).mark_point().encode(
-            x=alt.X('flipper_length_mm', scale=alt.Scale(domain=(160, 240))),
-            y=alt.Y('bill_depth_mm', scale=alt.Scale(domain=(12, 22))),
-            color='species'
-        )
-        st.altair_chart(chart, use_container_width=True)
-
-        # title for plotly
-        st.title("Scatter plot with plotly")
-        # plot with plotly
-        import plotly.express as px
-        fig = px.scatter(penguins, x="flipper_length_mm", y="bill_depth_mm", color="species")
-        st.plotly_chart(fig)
-
-        # violion plot with plotly
-        st.title("Violin plot with plotly")
-        # plot a violin plot with plotly
-        fig = px.violin(penguins, y="bill_length_mm", x="species", box=True, points="all")
-        st.plotly_chart(fig)
-
-# title for youtube
-st.title("Youtube video")
-# youtube video
-st.write("Youtube video")
-# embed a youtube video
-st.video("https://youtu.be/q3uXXh1sHcI")
+    # Violin Plot with Plotly
+    st.header("Bill Length Distribution by Species")
+    st.write("A violin plot illustrating the distribution of bill lengths across different penguin species.")
+    fig = px.violin(penguins, y="bill_length_mm", x="species", box=True, points="all")
+    st.plotly_chart(fig)
